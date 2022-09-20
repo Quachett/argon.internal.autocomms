@@ -17,6 +17,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import za.co.ominsure.synapse.content.scribe.backend.AutoCommsDashboardFacade;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsAudits;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsResult;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.RecipientsLookup;
@@ -28,7 +29,6 @@ import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.UsersPermissio
 import uk.co.inc.argon.commons.exceptions.ErrorResponse;
 import uk.co.inc.argon.commons.exceptions.HttpException;
 import uk.co.inc.argon.commons.util.SynapseConstants;
-import za.co.ominsure.synapse.content.scribe.backend.AutoCommsDashboardFacade;
 
 @Path("/synapse/content/scribe/rest")
 @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})

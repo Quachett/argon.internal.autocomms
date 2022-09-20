@@ -1,4 +1,4 @@
-package za.co.ominsure.synapse.content.scribe.backend.dao;
+package za.co.ominsure.synapse.content.scribe.backend.autocomms.dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,6 +13,7 @@ import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 
 import io.quarkus.agroal.DataSource;
+import za.co.ominsure.synapse.content.scribe.backend.autocomms.util.AutoCommsUtil;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.Attachment;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.Attachments;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsAudits;
@@ -23,7 +24,6 @@ import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.SearchTempateI
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.UsersPermissions;
 import uk.co.inc.argon.commons.exceptions.HttpException;
 import uk.co.inc.argon.commons.util.SynapseConstants;
-import za.co.ominsure.synapse.content.scribe.backend.util.AutoCommsUtil;
 
 @ApplicationScoped
 public class AutoCommsDashboardDaoBean implements AutoCommsDashboardDao {
@@ -34,14 +34,22 @@ public class AutoCommsDashboardDaoBean implements AutoCommsDashboardDao {
 	@Override
 	public RecipientsLookup getTemplateRecipientLookupInfo(SearchTempateIDs templateIDs) throws HttpException {
 		int num = 0;
-        String query = "SELECT * FROM SCRIBE.TEMPLATE_RECIPIENT_LOOKUP"; 
+		StringBuilder sb = new StringBuilder();
+		sb.append("SELECT trl.template_id, trl.broker, trl.primary_contact, trl.client, trl.assessment_contact, trl.description, t.date_created, t.created_by");
+		sb.append(StringUtils.SPACE).append("FROM scribe.template_recipient_lookup trl, SCRIBE.template t WHERE trl.template_id = t.name");
         
         if(templateIDs != null) {
             num = templateIDs.getTemplateIds().size();
             
-            query = query + " WHERE TEMPLATE_ID in (" + AutoCommsUtil.getLineOfQs(num) + ")";
+            sb.append(StringUtils.SPACE).append("AND trl.template_id IN (" + AutoCommsUtil.getLineOfQs(num) + ")");
         }
-        return getTemplateRecipientLookup(query, num, templateIDs);
+        return getTemplateRecipientLookup(sb.toString(), num, templateIDs);
+	}
+	
+	@Override
+	public SearchTempateIDs getTemplateIDs(SearchTempateIDs templateIDs) throws HttpException {
+		String query = "SELECT template_id FROM scribe.template_recipient_lookup WHERE template_id IN (" + AutoCommsUtil.getLineOfQs(templateIDs.getTemplateIds().size()) + ")";
+		return getTemplateIDs(query, templateIDs);
 	}
 
 	@Override
@@ -143,6 +151,8 @@ public class AutoCommsDashboardDaoBean implements AutoCommsDashboardDao {
                     recipientLookup.setClient(StringUtils.equalsIgnoreCase(rs.getString("CLIENT"),SynapseConstants.TIA_Y));
                     recipientLookup.setAssessmentContact(StringUtils.equalsIgnoreCase(rs.getString("ASSESSMENT_CONTACT"),SynapseConstants.TIA_Y));
                     recipientLookup.setDescription(rs.getString("DESCRIPTION"));
+                    recipientLookup.setUpdateDate(rs.getString("DATE_CREATED"));
+                    recipientLookup.setUpdatedBy(rs.getString("CREATED_BY"));
                     
                     Map<String, String> result = checkAttachmentPresent(rs.getString("TEMPLATE_ID"), conn);
                     recipientLookup.setAttachmentPresent(Boolean.parseBoolean(result.get(AutoCommsUtil.IS_ATT_PRESENT)));
@@ -160,6 +170,28 @@ public class AutoCommsDashboardDaoBean implements AutoCommsDashboardDao {
             //throw new HttpException(syn_err,Status.INTERNAL_SERVER_ERROR.getStatusCode());
         }
         return recipients;
+	}
+
+	private SearchTempateIDs getTemplateIDs(String query, int num, SearchTempateIDs templateIDs) {
+		try(Connection conn = synapseDatasource.getConnection();
+                PreparedStatement ps = conn.prepareStatement(query)){
+            
+            for(int i=0;i<num;i++)
+                ps.setString(i+1, templateIDs.getTemplateIds().get(i));
+            
+            try(ResultSet rs = ps.executeQuery()) {
+            	templateIDs = new SearchTempateIDs();
+                while(rs.next())
+                	templateIDs.getTemplateIds().add(rs.getString("TEMPLATE_ID"));
+            }
+			
+		} catch(SQLException e) {
+			String syn_err = "Failed to retrieve template Ids: " + e.getMessage();
+			System.out.println(syn_err);
+            //throw new HttpException(syn_err,Status.INTERNAL_SERVER_ERROR.getStatusCode());
+		}
+		
+		return templateIDs;
 	}
 	
 	private Map<String, String> checkAttachmentPresent(String templateId, Connection conn) {

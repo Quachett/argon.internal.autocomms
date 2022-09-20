@@ -1,4 +1,4 @@
-package za.co.ominsure.synapse.content.scribe.backend.util;
+package za.co.ominsure.synapse.content.scribe.backend.autocomms.util;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;

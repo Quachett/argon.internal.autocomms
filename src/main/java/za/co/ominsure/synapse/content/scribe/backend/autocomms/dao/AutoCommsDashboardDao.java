@@ -1,4 +1,4 @@
-package za.co.ominsure.synapse.content.scribe.backend.dao;
+package za.co.ominsure.synapse.content.scribe.backend.autocomms.dao;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -12,6 +12,8 @@ import uk.co.inc.argon.commons.exceptions.HttpException;
 @ApplicationScoped
 public interface AutoCommsDashboardDao {
 	public RecipientsLookup getTemplateRecipientLookupInfo(SearchTempateIDs templateIDs) throws HttpException;
+	
+	public SearchTempateIDs getTemplateIDs(SearchTempateIDs templateIDs) throws HttpException;
 
     public int[] addTemplateRecipientLookupInfo(RecipientsLookup recipients) throws HttpException;
 

@@ -1,4 +1,4 @@
-package za.co.ominsure.synapse.content.scribe.backend;
+package za.co.ominsure.synapse.content.scribe.backend.autocomms;
 
 import java.util.Base64;
 import java.util.regex.Pattern;
@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.StringUtils;
 
+import za.co.ominsure.synapse.content.scribe.backend.autocomms.dao.AutoCommsDashboardDao;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsAudits;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsResult;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.RecipientsLookup;
@@ -19,7 +20,6 @@ import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.UserPermission
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.UserPermissionsResults;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.UsersPermissions;
 import uk.co.inc.argon.commons.exceptions.HttpException;
-import za.co.ominsure.synapse.content.scribe.backend.dao.AutoCommsDashboardDao;
 
 @ApplicationScoped
 public class AutoCommsDashboardFacadeBean implements AutoCommsDashboardFacade {
