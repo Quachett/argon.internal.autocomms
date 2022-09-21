@@ -7,11 +7,11 @@ import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.UsersPermissio
 public interface AutoCommsUserPermissions {
 	public String getUserFromToken(String token);
 	
-	public UsersPermissions getUserPermissionsInfo(String UserID);
+	public UsersPermissions getUserPermissionsInfo(String userId) throws HttpException;
 	
-	public boolean checkPermissions(String UserID, String Permission) throws HttpException;
+	public boolean checkPermissions(String userId, String permission) throws HttpException;
 
-	public UserPermissionsResults deleteUserPermissionsInfo(String userID) throws HttpException;
+	public UserPermissionsResults deleteUserPermissionsInfo(String userId) throws HttpException;
 
 	public UserPermissionsResults updateUserPermissionsInfo(UsersPermissions usp) throws HttpException;
 

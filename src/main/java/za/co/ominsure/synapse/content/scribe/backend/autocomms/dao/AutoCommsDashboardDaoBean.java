@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,6 +32,7 @@ import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.RecipientLooku
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.RecipientsLookup;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.RecipientsLookupTIA;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.SearchTempateIDs;
+import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.UserPermissions;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.UsersPermissions;
 import uk.co.inc.argon.commons.exceptions.HttpException;
 import uk.co.inc.argon.commons.util.DateUtil;
@@ -162,28 +164,35 @@ String query = "UPDATE scribe.template_recipient_lookup SET broker = ?, primary_
 	}
 
 	@Override
-	public UsersPermissions getUserPermissionsInfo(String userID) throws HttpException {
-		// TODO Auto-generated method stub
-		return null;
+	public UsersPermissions getUserPermissionsInfo(String userId) throws HttpException {
+		String query = "SELECT * FROM scribe.comms_dashboard_user_permissions";
+        
+        if(userId != null)
+            query = query + " WHERE UPPER(USER_ID) = UPPER(?)";
+        
+        return getUserPermissions(query, userId);
 	}
-
+    
 	@Override
-	public boolean addUserPermissionsInfo(UsersPermissions usp) throws HttpException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
+    public boolean addUserPermissionsInfo(UsersPermissions usp) throws HttpException {
+        String query = "INSERT INTO scribe.comms_dashboard_user_permissions (PERMISSIONS, user_id) VALUES (UPPER(?),?)";
+        
+        return addOrUpdateUserPermissions(query, usp);
+    }
+    
 	@Override
-	public boolean updateUserPermissionsInfo(UsersPermissions usp) throws HttpException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
+    public boolean updateUserPermissionsInfo(UsersPermissions usp) throws HttpException {
+        String query = "UPDATE scribe.comms_dashboard_user_permissions SET PERMISSIONS = UPPER(?) WHERE UPPER(user_id) = UPPER(?)";
+        
+        return addOrUpdateUserPermissions(query, usp);
+    }
+    
 	@Override
-	public boolean deleteUserPermissionsInfo(String userID) throws HttpException {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public boolean deleteUserPermissionsInfo(String userID) throws HttpException {
+        String query = "DELETE FROM scribe.comms_dashboard_user_permissions WHERE UPPER(user_id) = UPPER(?)";
+        
+        return deleteUserPermissions(query, userID);
+    }
     
     private int[] updateDataTemplateRecipientLookup(String query, RecipientsLookup recipients) throws HttpException {        
         try(Connection conn = synapseDatasource.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
@@ -373,6 +382,76 @@ String query = "UPDATE scribe.template_recipient_lookup SET broker = ?, primary_
 		}
 
 		return recipients;    	
+    }
+    
+    private UsersPermissions getUserPermissions(String query, String userID) throws HttpException {
+        UserPermissions up = null;
+        UsersPermissions usp = null;
+        
+        try (Connection conn = synapseDatasource.getConnection();
+            PreparedStatement ps = conn.prepareStatement(query)) {
+            
+            if(userID != null)
+                ps.setString(1, userID);
+            
+            try(ResultSet rs = ps.executeQuery()){
+                if(rs.next()) {
+                    usp = new UsersPermissions();
+                    do {
+                        up = new UserPermissions();
+
+                        up.setUserId(rs.getString("USER_ID"));
+                        up.setPermissions(rs.getString("PERMISSIONS"));
+                        
+                        usp.getUserPermissions().add(up);
+                    }while(rs.next());
+                }
+            }
+        }
+        catch (SQLException e) {
+            throw new HttpException(e.getMessage(),Status.INTERNAL_SERVER_ERROR.getStatusCode());
+        }
+        return usp;
+    }
+    
+    private boolean addOrUpdateUserPermissions(String query, UsersPermissions usp) throws HttpException {
+        boolean added = true;
+        String error = "Failed to add users to table ";
+        
+        try(Connection conn = synapseDatasource.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
+            for(UserPermissions up : usp.getUserPermissions()) {
+                ps.setString(1, up.getPermissions());
+                ps.setString(2, up.getUserId());
+                ps.addBatch();
+            }
+            int[] add = ps.executeBatch();
+            
+            if(!Arrays.stream(add).allMatch(i -> i==1))
+                throw new HttpException(error,Status.INTERNAL_SERVER_ERROR.getStatusCode());
+        }
+        catch (SQLException e) {
+            throw new HttpException(e.getMessage(),Status.INTERNAL_SERVER_ERROR.getStatusCode());
+        }
+        
+        return added;
+    }
+    
+    private boolean deleteUserPermissions(String query, String userId) throws HttpException {
+        boolean deleted = false;
+        
+        try(Connection conn = synapseDatasource.getConnection(); 
+            PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setString(1, userId);
+            int del = ps.executeUpdate();
+            
+            if(del==1)
+                deleted = true;
+        }
+        catch (SQLException e){
+            throw new HttpException(e.getMessage(),Status.INTERNAL_SERVER_ERROR.getStatusCode());
+        }
+        
+        return deleted;
     }
 
 	private Map<String, String> checkAttachmentPresent(String templateId, Connection conn) throws HttpException {
