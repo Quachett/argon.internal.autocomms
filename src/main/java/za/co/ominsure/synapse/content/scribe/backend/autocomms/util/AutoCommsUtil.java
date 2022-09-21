@@ -2,9 +2,12 @@ package za.co.ominsure.synapse.content.scribe.backend.autocomms.util;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class AutoCommsUtil {
 
+    public static final String ISO_8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     public static final String EMPTY_PAYLOAD = "Payload Cannot be Empty or Null ";
     public static final String ID_ERROR = "TemplateID can not be empty or null ";
     public static final String DB_ERROR = "Failed to perform DB operation with unknown error ";
@@ -30,6 +33,12 @@ public class AutoCommsUtil {
 	public static final String GUID = "GUID";
 	public static final String NAME = "NAME";
 	public static final String ATT_NAME = "ATTACHMENT_NAME";
+	public static final String SYN = "SYNAPSE";
+	public static final String TIA = "TIA";
+	
+	public static final Gson gson = new GsonBuilder()
+			.setDateFormat(ISO_8601_DATE_FORMAT)
+			.setPrettyPrinting().create();
 
     public static String getLineOfQs(int num) {
         return Joiner.on(", ").join(Iterables.limit(Iterables.cycle("?"), num));

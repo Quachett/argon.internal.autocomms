@@ -17,7 +17,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import za.co.ominsure.synapse.content.scribe.backend.AutoCommsDashboardFacade;
+import za.co.ominsure.synapse.content.scribe.backend.autocomms.AutoCommsDashboardFacade;
+import za.co.ominsure.synapse.content.scribe.backend.autocomms.audit.AutoCommsAuditFacade;
+import za.co.ominsure.synapse.content.scribe.backend.autocomms.audit.AutoCommsUserPermissions;
+import za.co.ominsure.synapse.content.scribe.backend.autocomms.util.AutoCommsUtil;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsAudits;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsResult;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.RecipientsLookup;
@@ -36,7 +39,13 @@ import uk.co.inc.argon.commons.util.SynapseConstants;
 public class ScribeRest {
 
     @Inject
-    AutoCommsDashboardFacade facade;
+    private AutoCommsDashboardFacade facade;
+    
+    @Inject
+    private AutoCommsUserPermissions up;
+	
+	@Inject
+	private AutoCommsAuditFacade audit;
 
     private static final String READ = "R";
     private static final String ADD = "A";
@@ -108,44 +117,6 @@ public class ScribeRest {
     }
     
     /**
-     * [addTemplateRecipientLookup] Create new Template Lookup Entries in the Template Recipient Lookup Table
-     * 
-     * @param token - Authorisation Header Parameter from which the user is extracted
-     * @param recipients - payload containing an array of Template Recipient Lookup Objects
-     * @return AutoCommsResult - Result Object indicating degree of success and information about any failed
-     *         processes
-     */
-
-    @POST
-    @Path("/template/recipients")
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-    public Response addTemplateRecipientLookup(@HeaderParam("Authorization") String token, RecipientsLookup recipients) {
-        try {
-            
-
-            AutoCommsResult acr = facade.addTemplateRecipientLookup(recipients, facade.getUserFromToken(token));
-
-            if (acr.getMessage() != null) {
-                if (acr.getMessage().value().equals(Result.SUCCESS.value()))
-                    return Response.status(Status.CREATED).entity(acr).build();
-                else if (acr.getMessage().value().equals(Result.PARTIAL_SUCCESS.value()))
-                    return Response.status(207).entity(acr).build();
-                else
-                    return Response.status(Status.CONFLICT).entity(acr).build();
-            } else
-                return Response.status(Status.SERVICE_UNAVAILABLE).entity(acr).build();
-        } catch (HttpException e) {
-            //Synlog.error(e.toString(), ExceptionUtil.getStackTrace(e));
-            return Response.status(e.getStatus()).entity(new ErrorResponse(e.getStatus(), e.toString())).build();
-        }
-        catch (Exception e) {
-            //Synlog.error(e.toString(), ExceptionUtil.getStackTrace(e));
-            return Response.status(500).entity(new ErrorResponse(500, e.toString())).build(); 
-        }
-    }
-    
-    /**
      * [updateTemplateRecipientLookup] Updates Template Lookup Entries in the Template Recipient Lookup Table
      * 
      * @param token - Authorisation Header Parameter from which the user is extracted
@@ -165,7 +136,7 @@ public class ScribeRest {
             
             System.out.println("About to Update");
 
-            AutoCommsResult acr = facade.updateTemplateRecipientLookup(recipients, facade.getUserFromToken(token));
+            AutoCommsResult acr = facade.updateTemplateRecipientLookup(recipients, up.getUserFromToken(token));
 
             if (acr.getMessage() != null) {
                 if (acr.getMessage().value().equals(Result.SUCCESS.value()))
@@ -176,48 +147,6 @@ public class ScribeRest {
                     return Response.status(Status.NOT_FOUND).entity(acr).build();
             } else
                 return Response.status(Status.SERVICE_UNAVAILABLE).build();
-        } catch (HttpException e) {
-            //Synlog.error(e.toString(), ExceptionUtil.getStackTrace(e));
-            return Response.status(e.getStatus()).entity(new ErrorResponse(e.getStatus(), e.toString())).build();
-        }
-        catch (Exception e) {
-            //Synlog.error(e.toString(), ExceptionUtil.getStackTrace(e));
-            return Response.status(500).entity(new ErrorResponse(500, e.toString())).build(); 
-        }
-    }
-    
-    /**
-     * [deleteTemplateRecipientLookup] Remove a single record from the Template Recipient Lookup Table
-     * 
-     * @param token - Authorisation Header Parameter from which the user is extracted
-     * @param templateID - Path Param with the templateID that is to be deleted
-     * @param autoCommsID - the AutoCommsID associated with the template record in the Auto Comms Dashboard
-     * @param recipients - payload containing an array of Template Recipient Lookup Objects
-     * 
-     * @return AutoCommsResult - Result Object indicating degree of success and information about any failed
-     *         processes
-     */
-
-    @DELETE
-    @Path("/template/recipients/{templateID}")
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-    public Response deleteTemplateRecipientLookup(@HeaderParam("Authorization") String token,
-                                                  @PathParam("templateID") String templateID) {
-        
-
-        AutoCommsResult acr;
-        try {
-            acr = facade.deleteTemplateRecipientLookup(templateID, facade.getUserFromToken(token));
-
-            if (acr != null) {
-                if (acr.getMessage().value().equals(Result.SUCCESS.value()))
-                    return Response.status(Status.OK).entity(acr).build();
-                else if (acr.getMessage().value().equals(Result.PARTIAL_SUCCESS.value()))
-                    return Response.status(207).entity(acr).build();
-                else
-                    return Response.status(Status.NOT_FOUND).entity(acr).build();
-            } else
-                return Response.status(Status.NOT_FOUND).build();
         } catch (HttpException e) {
             //Synlog.error(e.toString(), ExceptionUtil.getStackTrace(e));
             return Response.status(e.getStatus()).entity(new ErrorResponse(e.getStatus(), e.toString())).build();
@@ -275,7 +204,7 @@ public class ScribeRest {
             
             System.out.println("About to Update");
 
-            AutoCommsResult acr = facade.updateTIARecipientLookup(recipients, facade.getUserFromToken(token));
+            AutoCommsResult acr = facade.updateTIARecipientLookup(recipients, up.getUserFromToken(token));
 
             if (acr.getMessage() != null) {
                 if (acr.getMessage().value().equals(Result.SUCCESS.value()))
@@ -315,17 +244,8 @@ public class ScribeRest {
     public Response getAutoCommsAuditTrailSYN(@DefaultValue("100") @QueryParam(SynapseConstants.PAGESIZE) Integer pagesize,
                                            @DefaultValue("0") @QueryParam(SynapseConstants.OFFSET) Integer offset,
                                            @QueryParam("templateId") String templateId) {
-        
-    	
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("%\"templateId\"");
-        sb.append(":\"");
-        sb.append(templateId);
-        sb.append("\"%");
-        
         try {
-            AutoCommsAudits acas = facade.getAutoCommsAuditTrail(sb.toString(),pagesize,offset);
+            AutoCommsAudits acas = audit.getAutoCommsAuditTrail(AutoCommsUtil.SYN,templateId,pagesize,offset);
 
             if (acas != null)
                 return Response.status(Status.OK).entity(acas).build();
@@ -360,20 +280,8 @@ public class ScribeRest {
                                            @DefaultValue("0") @QueryParam(SynapseConstants.OFFSET) Integer offset,
                                            @QueryParam("sectionId") int sectionId, @QueryParam("language") String lang) {
     	
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("%\"sectionId\"");
-        sb.append(":");
-        sb.append(sectionId);
-        sb.append("%");
-        sb.append("|");
-        sb.append("%\"language\"");
-        sb.append(":\"");
-        sb.append(lang);
-        sb.append("\"%");
-        
         try {
-            AutoCommsAudits acas = facade.getAutoCommsAuditTrail(sb.toString(),pagesize,offset);
+            AutoCommsAudits acas = audit.getTIAAutoCommsAuditTrail(AutoCommsUtil.TIA,sectionId,lang,pagesize,offset);
 
             if (acas != null)
                 return Response.status(Status.OK).entity(acas).build();
@@ -403,9 +311,9 @@ public class ScribeRest {
     })
     public Response getUserPermisions(@HeaderParam("Authorization") String token) {
         try {
-            if(facade.checkPermissions(facade.getUserFromToken(token), READ)) {
+            if(up.checkPermissions(up.getUserFromToken(token), READ)) {
     
-                UsersPermissions userPermissions = facade.getUserPermissionsInfo(null);
+                UsersPermissions userPermissions = up.getUserPermissionsInfo(null);
     
                 if (userPermissions != null)
                     return Response.status(Status.OK).entity(userPermissions).build();
@@ -441,9 +349,9 @@ public class ScribeRest {
     public Response getSingleUserPermisions(@HeaderParam("Authorization") String token,
                                             @PathParam("userId") String userID) {
         try {
-            if(facade.checkPermissions(facade.getUserFromToken(token), READ)) {
+            if(up.checkPermissions(up.getUserFromToken(token), READ)) {
     
-                UsersPermissions userPermissions = facade.getUserPermissionsInfo(userID);
+                UsersPermissions userPermissions = up.getUserPermissionsInfo(userID);
     
                 if (userPermissions != null)
                     return Response.status(Status.OK).entity(userPermissions).build();
@@ -482,9 +390,9 @@ public class ScribeRest {
     })
     public Response addUserPermissions(@HeaderParam("Authorization") String token, UsersPermissions userPermissions) {
         try {
-            if(facade.checkPermissions(facade.getUserFromToken(token), ADD)) {
+            if(up.checkPermissions(up.getUserFromToken(token), ADD)) {
     
-                UserPermissionsResults upr = facade.addUserPermissionsInfo(userPermissions);
+                UserPermissionsResults upr = up.addUserPermissionsInfo(userPermissions);
     
                 if (upr.getMessage() != null) {
                     if (upr.getMessage().value().equals(Result.SUCCESS.value()))
@@ -528,9 +436,9 @@ public class ScribeRest {
     })
     public Response updateUserPermissions(@HeaderParam("Authorization") String token, UsersPermissions userPermissions) {
         try {
-            if(facade.checkPermissions(facade.getUserFromToken(token), WRITE)) {
+            if(up.checkPermissions(up.getUserFromToken(token), WRITE)) {
     
-                UserPermissionsResults upr = facade.updateUserPermissionsInfo(userPermissions);
+                UserPermissionsResults upr = up.updateUserPermissionsInfo(userPermissions);
     
                 if (upr.getMessage() != null) {
                     if (upr.getMessage().value().equals(Result.SUCCESS.value()))
@@ -574,8 +482,8 @@ public class ScribeRest {
 
             UserPermissionsResults upr;
             try {
-                if(facade.checkPermissions(facade.getUserFromToken(token), DELETE)) {
-                    upr = facade.deleteUserPermissionsInfo(userID);
+                if(up.checkPermissions(up.getUserFromToken(token), DELETE)) {
+                    upr = up.deleteUserPermissionsInfo(userID);
     
                     if (upr != null) {
                         if (upr.getMessage().value().equals(Result.SUCCESS.value()))

@@ -1,6 +1,8 @@
 package za.co.ominsure.synapse.content.scribe.backend.autocomms.util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -8,6 +10,9 @@ import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response.Status;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +35,8 @@ public class AutoCommsHelperFacadeBean implements AutoCommsHelperFacade {
 
 	@Inject
 	AutoCommsDashboardDao dao;
+	
+    private static final ObjectMapper oMapper = new ObjectMapper();
 	
 	@Override
 	public Map<String, Map<Object, Object>> createHelperMaps(Object objs, Operation ops) throws HttpException {
@@ -107,6 +114,41 @@ public class AutoCommsHelperFacadeBean implements AutoCommsHelperFacade {
         
         return dbCheckMap;
     }
+	
+	@Override
+	public Map<String, Object> checkIfRecipientTemplatesExistsTIA(Map<TIASearchIDs, Object> newValuesMap) throws HttpException {
+		RecipientsLookupTIA recipientsLookup = null;
+        List<TIASearchIDs> tiaSearchIDs = new ArrayList<>();
+        Map<TIASearchIDs, Object> oldValuesMap = new HashMap<>();
+        Map<String, Object> dbCheckMap = new HashMap<>();
+        
+        tiaSearchIDs.addAll(newValuesMap.keySet());
+        recipientsLookup = dao.getTemplateRecipientLookupTIAInfo();
+        
+        if(recipientsLookup != null) {
+            
+            Map<TIASearchIDs, RecipientLookupTIA> recipientsLoookupMap = recipientsLookup.getRecipientLookupTIAs().stream()
+                .collect(Collectors.toMap(k -> {
+                    TIASearchIDs tiaPK = new TIASearchIDs();
+                    tiaPK.setSectionId(k.getSectionId());
+                    tiaPK.setLanguage(k.getLanguage());
+                    return tiaPK;
+                }, r -> r));
+            
+            recipientsLoookupMap.keySet().retainAll(tiaSearchIDs);
+            tiaSearchIDs = new ArrayList<>();
+            
+            tiaSearchIDs.addAll(recipientsLoookupMap.keySet());
+            
+            oldValuesMap.putAll(oMapper.convertValue(recipientsLoookupMap, new TypeReference<Map<TIASearchIDs, Object>>() {}));
+            newValuesMap.keySet().retainAll(tiaSearchIDs);
+            
+            dbCheckMap.put(AutoCommsUtil.ELIGABLE_VALUES_MAP, newValuesMap);
+            dbCheckMap.put(AutoCommsUtil.OLD_VALUES_MAP, oldValuesMap);
+        }
+        
+        return dbCheckMap;
+	}
     
 	@Override
     public AutoCommsResult failedUpdateTemplateRecipientLookup(Map<String, String> ids, Map<String, String> noReasonIDs) {
@@ -119,11 +161,6 @@ public class AutoCommsHelperFacadeBean implements AutoCommsHelperFacade {
         
         return acr;
     }
-	
-	private Map<String, Object> filterMap(Map<String, Object> map, SearchTempateIDs templateIds) {
-		map.keySet().retainAll(templateIds.getTemplateIds());
-		return map;
-	}
     
     private String getguid() {
         return RegExUtils.removeAll(GuidUtil.generateGUID(), Pattern.compile("[{}-]"));
