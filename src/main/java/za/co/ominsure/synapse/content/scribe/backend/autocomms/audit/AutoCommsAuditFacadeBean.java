@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response.Status;
 
@@ -27,6 +28,7 @@ import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.Result;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.SearchTempateIDs;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.TIASearchIDs;
 
+@ApplicationScoped
 public class AutoCommsAuditFacadeBean implements AutoCommsAuditFacade {
 	
 	@Inject
@@ -42,6 +44,7 @@ public class AutoCommsAuditFacadeBean implements AutoCommsAuditFacade {
 	    sb.append(":\"");
 	    sb.append(templateId);
 	    sb.append("\"%");
+	    System.out.println(sb.toString());
 		return dao.getAuditTrailInfo(source, sb.toString(), pagesize, offset);
 	}
 	
@@ -58,6 +61,7 @@ public class AutoCommsAuditFacadeBean implements AutoCommsAuditFacade {
         sb.append(":\"");
         sb.append(lang);
         sb.append("\"%");
+	    System.out.println(sb.toString());
         return dao.getAuditTrailInfo(source, sb.toString(), pagesize, offset);
 	}
 

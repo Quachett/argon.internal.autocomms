@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response.Status;
 
@@ -22,6 +23,7 @@ import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.UserPermission
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.UserPermissionsResults;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.UsersPermissions;
 
+@ApplicationScoped
 public class AutoCommsUserPermissionsBean implements AutoCommsUserPermissions {
 	@Inject
 	private AutoCommsDashboardDao dao;
@@ -176,6 +178,8 @@ public class AutoCommsUserPermissionsBean implements AutoCommsUserPermissions {
         String decodedString = new String(decodedBytes);
         
         String user = StringUtils.substringBefore(StringUtils.substringAfter(StringUtils.strip(decodedString,"{\"}"), ":\""),"\"");
+        
+        System.out.println("User: " + user);
         
         return user;
 	}

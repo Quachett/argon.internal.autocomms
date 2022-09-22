@@ -3,6 +3,8 @@ package za.co.ominsure.synapse.content.scribe.backend.autocomms.audit;
 import java.util.List;
 import java.util.Map;
 
+import javax.enterprise.context.ApplicationScoped;
+
 import uk.co.inc.argon.commons.exceptions.HttpException;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsAudits;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsResult;
@@ -10,6 +12,7 @@ import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.RecipientLooku
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.RecipientLookupTIA;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.TIASearchIDs;
 
+@ApplicationScoped
 public interface AutoCommsAuditFacade {
 	public AutoCommsAudits getAutoCommsAuditTrail(String source, String templaateId, Integer pagesize, Integer offset) throws HttpException;
 	

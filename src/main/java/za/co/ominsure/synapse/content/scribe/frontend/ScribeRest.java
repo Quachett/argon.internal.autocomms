@@ -86,21 +86,21 @@ public class ScribeRest {
      * 
      * Returns a single record from Template Recipient Lookup Table
      * 
-     * @param templateID - Path Param with the templateID being searched
+     * @param templateId - Path Param with the templateID being searched
      * 
      * @return RecipientLookup - the Template Recipient Lookup object associated with the received templateID
      */
     
     @GET
-    @Path("/template/recipients/{templateID}")
+    @Path("/template/recipients/{templateId}")
 	@Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    public Response getTemplateRecipientLookupByTemplateID(@PathParam("templateID") String templateID) {
+    public Response getTemplateRecipientLookupByTemplateID(@PathParam("templateId") String templateId) {
         
 
-        SearchTempateIDs templateIDs = new SearchTempateIDs();
-        templateIDs.getTemplateIds().add(templateID);
+        SearchTempateIDs templateIds = new SearchTempateIDs();
+        templateIds.getTemplateIds().add(templateId);
         try {
-            RecipientsLookup recipientsLookup = facade.getTemplateRecipientLookup(templateIDs);
+            RecipientsLookup recipientsLookup = facade.getTemplateRecipientLookup(templateIds);
 
             if (recipientsLookup != null)
                 return Response.status(Status.OK).entity(recipientsLookup).build();
@@ -134,7 +134,7 @@ public class ScribeRest {
                                                   RecipientsLookup recipients) {
         try {
             
-            System.out.println("About to Update");
+            System.out.println("About to Update. size: " + recipients.getRecipientTemplates().size());
 
             AutoCommsResult acr = facade.updateTemplateRecipientLookup(recipients, up.getUserFromToken(token));
 
@@ -346,7 +346,7 @@ public class ScribeRest {
     @Produces({
                MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML
     })
-    public Response getSingleUserPermisions(@HeaderParam("Authorization") String token,
+    public Response getUserPermisionsById(@HeaderParam("Authorization") String token,
                                             @PathParam("userId") String userID) {
         try {
             if(up.checkPermissions(up.getUserFromToken(token), READ)) {
