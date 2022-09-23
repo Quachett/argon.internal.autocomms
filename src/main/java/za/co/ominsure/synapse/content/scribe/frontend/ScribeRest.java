@@ -34,7 +34,6 @@ import uk.co.inc.argon.commons.exceptions.HttpException;
 import uk.co.inc.argon.commons.util.SynapseConstants;
 
 @Path("/synapse/content/scribe/rest")
-@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 @Transactional
 public class ScribeRest {
 
@@ -130,12 +129,8 @@ public class ScribeRest {
     @Path("/template/recipients")
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-    public Response updateTemplateRecipientLookup(@HeaderParam("Authorization") String token,
-                                                  RecipientsLookup recipients) {
+    public Response updateTemplateRecipientLookup(RecipientsLookup recipients, @HeaderParam("Authorization") String token) {
         try {
-            
-            System.out.println("About to Update. size: " + recipients.getRecipientTemplates().size());
-
             AutoCommsResult acr = facade.updateTemplateRecipientLookup(recipients, up.getUserFromToken(token));
 
             if (acr.getMessage() != null) {
@@ -201,9 +196,6 @@ public class ScribeRest {
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public Response updateTemplateRecipientLookupTIA(@HeaderParam("Authorization") String token, RecipientsLookupTIA recipients) {
         try {
-            
-            System.out.println("About to Update");
-
             AutoCommsResult acr = facade.updateTIARecipientLookup(recipients, up.getUserFromToken(token));
 
             if (acr.getMessage() != null) {

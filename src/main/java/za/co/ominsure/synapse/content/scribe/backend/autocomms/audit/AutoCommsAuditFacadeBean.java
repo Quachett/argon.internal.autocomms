@@ -38,31 +38,15 @@ public class AutoCommsAuditFacadeBean implements AutoCommsAuditFacade {
 
 	@Override
 	public AutoCommsAudits getAutoCommsAuditTrail(String source, String templateId, Integer pagesize, Integer offset) throws HttpException {
-		StringBuilder sb = new StringBuilder();
-
-	    sb.append("%\"templateId\"");
-	    sb.append(":\"");
-	    sb.append(templateId);
-	    sb.append("\"%");
-	    System.out.println(sb.toString());
-		return dao.getAuditTrailInfo(source, sb.toString(), pagesize, offset);
+		return dao.getAuditTrailInfo(source, templateId, pagesize, offset);
 	}
 	
 	@Override
 	public AutoCommsAudits getTIAAutoCommsAuditTrail(String source, int sectionId, String lang, Integer pagesize, Integer offset) throws HttpException {
-		StringBuilder sb = new StringBuilder();
-
-        sb.append("%\"sectionId\"");
-        sb.append(":");
-        sb.append(sectionId);
-        sb.append("%");
-        sb.append("|");
-        sb.append("%\"language\"");
-        sb.append(":\"");
-        sb.append(lang);
-        sb.append("\"%");
-	    System.out.println(sb.toString());
-        return dao.getAuditTrailInfo(source, sb.toString(), pagesize, offset);
+		TIASearchIDs ids = new TIASearchIDs();
+		ids.setLanguage(lang);
+		ids.setSectionId(sectionId);
+        return dao.getAuditTrailInfo(source, ids.toString(), pagesize, offset);
 	}
 
 	@Override
@@ -76,6 +60,7 @@ public class AutoCommsAuditFacadeBean implements AutoCommsAuditFacade {
         
         for (String templateID : templateIDs.getTemplateIds()) {
             autoCommsAudit = new AutoCommsAudit();
+            autoCommsAudit.setTemplateId(templateID);
             autoCommsAudit.setActionPerformed(Operation.UPDATE);
             autoCommsAudit.setAuditTime(du.formatDateTime(new Date()));
             autoCommsAudit.setAutoCommsId(ids.get(templateID));
@@ -102,6 +87,7 @@ public class AutoCommsAuditFacadeBean implements AutoCommsAuditFacade {
         
         for (TIASearchIDs tiaSearchID : tiaSearchIDs) {
             autoCommsAudit = new AutoCommsAudit();
+            autoCommsAudit.setTemplateId(tiaSearchID.toString());
             autoCommsAudit.setActionPerformed(Operation.UPDATE);
             autoCommsAudit.setAuditTime(du.formatDateTime(new Date()));
             autoCommsAudit.setAutoCommsId(ids.get(tiaSearchID));

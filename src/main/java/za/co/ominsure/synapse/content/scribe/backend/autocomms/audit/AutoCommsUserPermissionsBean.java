@@ -156,12 +156,10 @@ public class AutoCommsUserPermissionsBean implements AutoCommsUserPermissions {
         String regex = "^(?!.*?(.).*?\\1)[RAWD]*$";
         
         if(Pattern.matches(regex, permission)) {
-            System.out.println("Regex Matched");;
             UsersPermissions usp = getUserPermissionsInfo(userId);
             if(usp != null) {
                 UserPermissions up = usp.getUserPermissions().get(0);
                 
-                System.out.println("up.getPermissions(): " + up.getPermissions());
                 if(StringUtils.containsIgnoreCase(up.getPermissions(), permission))
                     allowed = true;
             }
@@ -178,8 +176,6 @@ public class AutoCommsUserPermissionsBean implements AutoCommsUserPermissions {
         String decodedString = new String(decodedBytes);
         
         String user = StringUtils.substringBefore(StringUtils.substringAfter(StringUtils.strip(decodedString,"{\"}"), ":\""),"\"");
-        
-        System.out.println("User: " + user);
         
         return user;
 	}

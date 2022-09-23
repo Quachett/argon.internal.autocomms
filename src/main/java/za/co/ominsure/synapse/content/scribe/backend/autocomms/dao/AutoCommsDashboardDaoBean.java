@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.Resource;
-import javax.ejb.EJB;
+//import javax.ejb.EJB;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response.Status;
@@ -40,7 +40,7 @@ import uk.co.inc.argon.commons.util.SynapseConstants;
 
 @ApplicationScoped
 public class AutoCommsDashboardDaoBean implements AutoCommsDashboardDao {
-	@EJB
+	//@EJB
 	//private Logger logger;
 	
 	@Resource(name = "jdbc/tiaDS", mappedName = "jdbc/tiaDS")
@@ -68,14 +68,14 @@ public class AutoCommsDashboardDaoBean implements AutoCommsDashboardDao {
 	
 	@Override
 	public int[] updateTemplateRecipientLookupInfo(RecipientsLookup recipients) throws HttpException {
-String query = "UPDATE scribe.template_recipient_lookup SET broker = ?, primary_contact = ?, client = ?, assessment_contact = ?, description = ? WHERE template_id = ?";
+		String query = "UPDATE scribe.template_recipient_lookup SET broker = ?, primary_contact = ?, client = ?, assessment_contact = ?, description = ? WHERE template_id = ?";
         
         return updateDataTemplateRecipientLookup(query, recipients);
 	}
 
 	@Override
 	public int[] templateRecipientLookupAuditTrail(AutoCommsAudits autoCommsAudits) throws HttpException {
-		String query = "INSERT INTO scribe.comms_dashboard_audit_trail(auto_comm_id, action_performed, original_value, new_value, user_id, reason, audit_time) VALUES (?,?,?,?,?,?,?)";
+		String query = "INSERT INTO scribe.comms_dashboard_audit_trail(auto_comm_id, action_performed, original_value, new_value, user_id, reason, audit_time, template_id) VALUES (?,?,?,?,?,?,?,?)";
         //logger.info("Auto Comms Auditing started");
         
         try(Connection conn = synapseDatasource.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
@@ -87,6 +87,7 @@ String query = "UPDATE scribe.template_recipient_lookup SET broker = ?, primary_
                 ps.setString(5, aca.getUserId());
                 ps.setString(6, aca.getReason());
                 ps.setTimestamp(7, du.getTimestamp(aca.getAuditTime()));
+                ps.setString(8, aca.getTemplateId());
                 ps.addBatch();
             }
 
@@ -156,11 +157,13 @@ String query = "UPDATE scribe.template_recipient_lookup SET broker = ?, primary_
 	}
 
 	@Override
-	public AutoCommsAudits getAuditTrailInfo(String source, String term, Integer pagesize, Integer offset) throws HttpException {
-		
-		String query = getQuery(source);
+	public AutoCommsAudits getAuditTrailInfo(String source, String templateId, Integer pagesize, Integer offset) throws HttpException {
+		StringBuilder sb = new StringBuilder();
 
-        return getAuditTrail(query, term, pagesize, offset);
+        sb.append("SELECT * FROM scribe.comms_dashboard_audit_trail");
+        sb.append(" WHERE template_id = ?");		
+
+        return getAuditTrail(sb.toString(), templateId, pagesize, offset);
 	}
 
 	@Override
@@ -253,17 +256,7 @@ String query = "UPDATE scribe.template_recipient_lookup SET broker = ?, primary_
                 PreparedStatement ps = conn.prepareStatement(query)){
                 //logger.info("Started Getting Auto Comms Trail");
             
-            if(StringUtils.contains(searchID, "templateId")) {
-                ps.setString(1, searchID);
-                ps.setString(2, searchID);
-            }
-            else {
-                ps.setString(1, StringUtils.substringBefore(searchID, "|"));
-                ps.setString(2, StringUtils.substringAfter(searchID, "|"));
-                ps.setString(3, StringUtils.substringBefore(searchID, "|"));
-                ps.setString(4, StringUtils.substringAfter(searchID, "|"));
-            }
-            
+        	ps.setString(1, searchID);            
             try(ResultSet rs = ps.executeQuery()){
                 if(rs.next()) {
                     acas = new AutoCommsAudits();
@@ -329,15 +322,13 @@ String query = "UPDATE scribe.template_recipient_lookup SET broker = ?, primary_
                     recipientLookup.setAttachmentPresent(Boolean.parseBoolean(result.get(AutoCommsUtil.IS_ATT_PRESENT)));
                     recipientLookup.setAttachmentName(result.get(AutoCommsUtil.ATT_NAME));
                     
-                    //System.out.println(checkAttachmentPresent(rs.getString("TEMPLATE_ID"), conn));
-                    
                     recipients.getRecipientTemplates().add(recipientLookup);
                 }
             }
         }
         catch (SQLException e) {
         	String syn_err = "Failed to retrieve the recipient list. Error: " + e.getMessage();
-			System.out.println(syn_err);
+        	//logger.error(syn_err);
             throw new HttpException(syn_err,Status.INTERNAL_SERVER_ERROR.getStatusCode());
         }
         return recipients;
@@ -471,8 +462,7 @@ String query = "UPDATE scribe.template_recipient_lookup SET broker = ?, primary_
 		} 
 		catch (SQLException e) {
 			String syn_err = "Failed to lookup Scribe Attachments. Error: " + e.getMessage();
-			System.out.println(syn_err);
-			e.printStackTrace();
+			//logger.error(syn_err);
 			throw new HttpException(syn_err,Status.INTERNAL_SERVER_ERROR.getStatusCode());
 		}
 		return result;
@@ -493,47 +483,10 @@ String query = "UPDATE scribe.template_recipient_lookup SET broker = ?, primary_
 			}
 		} 
 		catch (SQLException e) {
-			e.printStackTrace();
 			String syn_err = "Failed to retrieve templateless Hoard Attachments. Error: " + e.getMessage();
-			System.out.println(syn_err);
+			//logger.error(syn_err);
 			throw new HttpException(syn_err,Status.INTERNAL_SERVER_ERROR.getStatusCode());
 		}
 		return atts;
 	}
-    
-    private String getQuery(String source) {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("SELECT * FROM scribe.comms_dashboard_audit_trail");
-        sb.append(" WHERE ");
-        
-        switch (source) {
-			case AutoCommsUtil.SYN:
-				sb.append("UPPER(original_value)");
-	            sb.append(" LIKE UPPER(?)");
-	            sb.append(" OR ");
-	            sb.append("UPPER(new_value)");
-	            sb.append(" LIKE UPPER(?)");
-				break;
-
-			default:
-				sb.append("(UPPER(original_value)");
-	            sb.append(" LIKE UPPER(?)");
-	            sb.append(" AND ");
-	            sb.append("UPPER(original_value)");
-	            sb.append(" LIKE UPPER(?))");
-	            sb.append(" OR ");
-	            sb.append("(UPPER(new_value)");
-	            sb.append(" LIKE UPPER(?)");
-	            sb.append(" AND ");
-	            sb.append("UPPER(new_value)");
-	            sb.append(" LIKE UPPER(?))");
-				break;
-		}
-        
-        sb.append(" ORDER BY AUDIT_TIME DESC");
-        
-        return sb.toString();
-    }
-
 }
