@@ -21,6 +21,8 @@ import za.co.ominsure.synapse.content.scribe.backend.autocomms.AutoCommsDashboar
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.audit.AutoCommsAuditFacade;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.audit.AutoCommsUserPermissions;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.util.AutoCommsUtil;
+import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.Attachment;
+import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.Attachments;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsAudits;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsResult;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.RecipientsLookup;
@@ -466,38 +468,91 @@ public class ScribeRest {
 
     @DELETE
     @Path("/template/recipients/users/{userId}")
-    @Produces({
-               MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML
-    })
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public Response deleteUserPermissions(@HeaderParam("Authorization") String token,
                                                   @PathParam("userId") String userID) {
 
-            UserPermissionsResults upr;
-            try {
-                if(up.checkPermissions(up.getUserFromToken(token), DELETE)) {
-                    upr = up.deleteUserPermissionsInfo(userID);
-    
-                    if (upr != null) {
-                        if (upr.getMessage().value().equals(Result.SUCCESS.value()))
-                            return Response.status(Status.OK).entity(upr).build();
-                        else if (upr.getMessage().value().equals(Result.PARTIAL_SUCCESS.value()))
-                            return Response.status(207).entity(upr).build();
-                        else
-                            return Response.status(Status.NOT_FOUND).entity(upr).build();
-                    } else
-                        return Response.status(Status.NOT_FOUND).build();
-                }
-                else
-                    return Response.status(Status.UNAUTHORIZED.getStatusCode())
-                        .entity(new ErrorResponse(Status.UNAUTHORIZED.getStatusCode(),"User Restricted from DELETING this content")).build();
-            } catch (HttpException e) {
-                //Synlog.error(e.toString(), ExceptionUtil.getStackTrace(e));
-                return Response.status(e.getStatus()).entity(new ErrorResponse(e.getStatus(), e.toString())).build();
-            }
-            catch (Exception e) {
-                //Synlog.error(e.toString(), ExceptionUtil.getStackTrace(e));
-                return Response.status(500).entity(new ErrorResponse(500, e.toString())).build(); 
-            }
+        UserPermissionsResults upr;
+        try {
+            if(up.checkPermissions(up.getUserFromToken(token), DELETE)) {
+                upr = up.deleteUserPermissionsInfo(userID);
 
+                if (upr != null) {
+                    if (upr.getMessage().value().equals(Result.SUCCESS.value()))
+                        return Response.status(Status.OK).entity(upr).build();
+                    else if (upr.getMessage().value().equals(Result.PARTIAL_SUCCESS.value()))
+                        return Response.status(207).entity(upr).build();
+                    else
+                        return Response.status(Status.NOT_FOUND).entity(upr).build();
+                } else
+                    return Response.status(Status.NOT_FOUND).build();
+            }
+            else
+                return Response.status(Status.UNAUTHORIZED.getStatusCode())
+                    .entity(new ErrorResponse(Status.UNAUTHORIZED.getStatusCode(),"User Restricted from DELETING this content")).build();
+        } catch (HttpException e) {
+            //Synlog.error(e.toString(), ExceptionUtil.getStackTrace(e));
+            return Response.status(e.getStatus()).entity(new ErrorResponse(e.getStatus(), e.toString())).build();
+        }
+        catch (Exception e) {
+            //Synlog.error(e.toString(), ExceptionUtil.getStackTrace(e));
+            return Response.status(500).entity(new ErrorResponse(500, e.toString())).build(); 
+        }
+    }
+    
+    /**
+     * [getAttachements] Retrieves attachments that are not associated with any template. These are generic templates used in multiple templates
+     * 
+     * @param name - name of an individual attachment to retrieve one record.
+     * @return Attachments - a list of requested attachments.
+     */
+    
+    @GET
+    @Path("/template/recipients/attachment/{name}")
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    public Response getAttachment(@PathParam("name") String name) {
+    	try {
+            Attachments attachments = facade.getAttachments(name);
+
+            if (!attachments.getAttachment().isEmpty())
+                return Response.status(Status.OK).entity(attachments.getAttachment().get(0)).build();
+            else
+                return Response.status(Status.NOT_FOUND).entity(new Attachment()).build();
+
+        } catch (HttpException e) {
+            //Synlog.error(e.toString(), ExceptionUtil.getStackTrace(e));
+            return Response.status(e.getStatus()).entity(new ErrorResponse(e.getStatus(), e.toString())).build();
+        } catch (Exception e) {
+            //Synlog.error(e.toString(), ExceptionUtil.getStackTrace(e));
+            return Response.status(500).entity(new ErrorResponse(500, e.toString())).build();
+        }
+    }
+    
+    /**
+     * [getAttachements] Retrieves attachments that are not associated with any template. These are generic templates used in multiple templates
+     * 
+     * @param name - name of an individual attachment to retrieve one record.
+     * @return Attachments - a list of requested attachments.
+     */
+    
+    @GET
+    @Path("/template/recipients/attachment")
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    public Response getAttachments() {
+    	try {
+            Attachments attachments = facade.getAttachments(null);
+
+            if (!attachments.getAttachment().isEmpty())
+                return Response.status(Status.OK).entity(attachments).build();
+            else
+                return Response.status(Status.NOT_FOUND).entity(new Attachments()).build();
+
+        } catch (HttpException e) {
+            //Synlog.error(e.toString(), ExceptionUtil.getStackTrace(e));
+            return Response.status(e.getStatus()).entity(new ErrorResponse(e.getStatus(), e.toString())).build();
+        } catch (Exception e) {
+            //Synlog.error(e.toString(), ExceptionUtil.getStackTrace(e));
+            return Response.status(500).entity(new ErrorResponse(500, e.toString())).build();
+        }
     }
 }

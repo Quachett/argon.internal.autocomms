@@ -2,6 +2,7 @@ package za.co.ominsure.synapse.content.scribe.backend.autocomms.dao;
 
 import javax.enterprise.context.ApplicationScoped;
 
+import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.Attachments;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsAudits;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.RecipientsLookup;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.RecipientsLookupTIA;
@@ -32,4 +33,6 @@ public interface AutoCommsDashboardDao {
 	public boolean updateUserPermissionsInfo(UsersPermissions usp) throws HttpException;
 
 	public boolean deleteUserPermissionsInfo(String userID) throws HttpException;
+	
+	public Attachments getAttachments(String name) throws HttpException;
 }

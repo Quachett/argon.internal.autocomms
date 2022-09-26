@@ -196,6 +196,15 @@ public class AutoCommsDashboardDaoBean implements AutoCommsDashboardDao {
         
         return deleteUserPermissions(query, userID);
     }
+	
+	@Override
+	public Attachments getAttachments(String name) throws HttpException {
+		StringBuilder sb = new StringBuilder();
+		sb.append("SELECT name, guid FROM scribe.attachment");
+		if(StringUtils.isNotBlank(name))
+			sb.append(" WHERE NAME = ?");
+		return getAttachments(sb.toString(), name);
+	}
     
     private int[] updateDataTemplateRecipientLookup(String query, RecipientsLookup recipients) throws HttpException {        
         try(Connection conn = synapseDatasource.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
@@ -409,7 +418,8 @@ public class AutoCommsDashboardDaoBean implements AutoCommsDashboardDao {
         boolean added = true;
         String error = "Failed to add users to table ";
         
-        try(Connection conn = synapseDatasource.getConnection(); PreparedStatement ps = conn.prepareStatement(query)) {
+        try(Connection conn = synapseDatasource.getConnection();
+        		PreparedStatement ps = conn.prepareStatement(query)) {
             for(UserPermissions up : usp.getUserPermissions()) {
                 ps.setString(1, up.getPermissions());
                 ps.setString(2, up.getUserId());
@@ -467,18 +477,23 @@ public class AutoCommsDashboardDaoBean implements AutoCommsDashboardDao {
 		}
 		return result;
 	}
-	
-	private Attachments getAttachement(String templateId, Connection conn) throws HttpException {
-		Attachment att = new Attachment();
+	private Attachments getAttachments(String query, String name) throws HttpException {
+		Attachment att = null;
 		Attachments atts = new Attachments();
-		String query = "SELECT name, guid FROM scribe.attachment WHERE NAME = ?";
-		try(PreparedStatement ps = conn.prepareStatement(query)) {
-			ps.setString(1, templateId);
+		
+		try(Connection conn = synapseDatasource.getConnection();
+				PreparedStatement ps = conn.prepareStatement(query)) {
+			
+			if(StringUtils.isNotBlank(name))
+				ps.setString(1, name);
+			
 			try(ResultSet rs = ps.executeQuery()) {
 				while(rs.next()!=false) {
-					 att.setAttachmentGuid(rs.getString(AutoCommsUtil.GUID));
-					 att.setAttachmentName(rs.getString(AutoCommsUtil.NAME));
-					 atts.getAttachment().add(att);
+					att = new Attachment();
+					att.setSource(AutoCommsUtil.SYN);
+					att.setAttachmentGuid(rs.getString(AutoCommsUtil.GUID));
+					att.setAttachmentName(rs.getString(AutoCommsUtil.NAME));
+					atts.getAttachment().add(att);
 				}
 			}
 		} 

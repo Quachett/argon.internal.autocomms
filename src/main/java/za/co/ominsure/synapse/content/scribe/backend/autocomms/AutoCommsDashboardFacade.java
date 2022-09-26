@@ -2,6 +2,7 @@ package za.co.ominsure.synapse.content.scribe.backend.autocomms;
 
 import javax.enterprise.context.ApplicationScoped;
 
+import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.Attachments;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsResult;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.RecipientsLookup;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.RecipientsLookupTIA;
@@ -17,4 +18,6 @@ public interface AutoCommsDashboardFacade {
     public RecipientsLookupTIA getTemplateRecipientLookupTIA() throws HttpException;
 
 	public AutoCommsResult updateTIARecipientLookup(RecipientsLookupTIA recipients, String user) throws HttpException;
+	
+	public Attachments getAttachments(String name) throws HttpException;
 }

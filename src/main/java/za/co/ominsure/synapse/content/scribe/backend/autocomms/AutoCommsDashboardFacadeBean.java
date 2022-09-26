@@ -18,6 +18,7 @@ import za.co.ominsure.synapse.content.scribe.backend.autocomms.dao.AutoCommsDash
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.util.AutoCommsHelperFacade;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.util.AutoCommsUtil;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.util.TIAKeyDeserializer;
+import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.Attachments;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsAudits;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.AutoCommsResult;
 import za.co.ominsure.synapse.content.scribe.backend.autocomms.vo.Operation;
@@ -47,6 +48,11 @@ public class AutoCommsDashboardFacadeBean implements AutoCommsDashboardFacade {
 	@Override
 	public RecipientsLookup getTemplateRecipientLookup(SearchTempateIDs templateIDs) throws HttpException {
 		return dao.getTemplateRecipientLookupInfo(templateIDs);
+	}
+	
+	@Override
+	public Attachments getAttachments(String name) throws HttpException {
+		return dao.getAttachments(name);
 	}
 
 	@Override
